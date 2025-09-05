@@ -37,6 +37,9 @@ public class ExpressionEvaluationHandler {
   protected final ElProvider elProvider;
   protected final FeelEngine feelEngine;
 
+  protected final Object scriptCacheLock = new Object();
+  protected final Object expressionCacheLock = new Object();
+
   public ExpressionEvaluationHandler(DefaultDmnEngineConfiguration configuration) {
     this.scriptEngineResolver = configuration.getScriptEngineResolver();
     this.elProvider = configuration.getElProvider();
@@ -73,10 +76,11 @@ public class ExpressionEvaluationHandler {
 
         CompiledScript compiledScript = cachedCompiledScriptSupport.getCachedCompiledScript();
         if (compiledScript == null) {
-          synchronized (cachedCompiledScriptSupport) {
+          synchronized (scriptCacheLock) {
             compiledScript = cachedCompiledScriptSupport.getCachedCompiledScript();
 
             if (compiledScript == null) {
+
               compiledScript = compilableScriptEngine.compile(expressionText);
 
               cachedCompiledScriptSupport.cacheCompiledScript(compiledScript);
@@ -100,7 +104,7 @@ public class ExpressionEvaluationHandler {
       ElExpression elExpression = cachedExpressionSupport.getCachedExpression();
 
       if (elExpression == null) {
-        synchronized (cachedExpressionSupport) {
+        synchronized (expressionCacheLock) {
           elExpression = cachedExpressionSupport.getCachedExpression();
           if(elExpression == null) {
             elExpression = elProvider.createExpression(expressionText);
